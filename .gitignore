@@ -1,0 +1,28 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# --- Python (ai-service) ---
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.env
+
+# --- .NET Core (backend) ---
+[Oo]bj/
+[Bb]in/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+app.db  # SQLite veritabanı 
+
+# --- Node (frontend/web-react ve mobile-rncli için) ---
+node_modules/
+dist/
+build/
+.env
+.env.local
