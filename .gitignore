@@ -18,7 +18,9 @@ venv/
 *.userosscache
 *.sln.docstates
 .vs/
-app.db  # SQLite veritabanı 
+app.db
+app.db-shm
+app.db-wal
 
 # --- Node (frontend/web-react ve mobile-rncli için) ---
 node_modules/

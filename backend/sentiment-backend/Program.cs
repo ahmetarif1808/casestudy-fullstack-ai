@@ -8,8 +8,11 @@ using sentiment_backend.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 // === CONFIG ===
-var aiUrl = Environment.GetEnvironmentVariable("AI_URL") 
-            ?? "https://router.huggingface.co/hf-inference/models/savasy/bert-base-turkish-sentiment-cased";
+var aiUrl = Environment.GetEnvironmentVariable("AI_URL");
+if (string.IsNullOrWhiteSpace(aiUrl))
+{
+    throw new InvalidOperationException("AI_URL environment variable is not set.");
+}
 var hfToken = Environment.GetEnvironmentVariable("HF_TOKEN");
 var useMockFallback = builder.Configuration.GetValue<bool>("USE_MOCK_FALLBACK", false);
 
@@ -34,9 +37,16 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("http://localhost:3000")
+        // Geliştirme (localhost) VE Canlı (Vercel) adreslerine izin ver
+        policy.WithOrigins("http://localhost:3000", "https://*.vercel.app") 
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .SetIsOriginAllowedToAllowWildcardSubdomains(); // *.vercel.app için
+              
+        // VEYA DAHA BASİTİ (Ama daha az güvenli):
+        // policy.AllowAnyOrigin()
+        //       .AllowAnyHeader()
+        //       .AllowAnyMethod();
     });
 });
 
