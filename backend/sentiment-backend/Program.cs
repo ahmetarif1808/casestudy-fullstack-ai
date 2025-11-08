@@ -74,8 +74,7 @@ async Task<(bool ok, string? label, double? score, string? raw)> CallAiServiceAs
     }
 
     var client = httpFactory.CreateClient("ai");
-    var payload = new { inputs = text }; // Hugging Face Router expects "inputs"
-
+    var payload = new { data = new[] { text } }; // Gradio API expects {"data": ["text"]}
     var attempts = 3;
     var delayMs = 2000;
 
