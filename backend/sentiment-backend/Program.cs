@@ -37,18 +37,23 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        // Geliştirme (localhost) VE Canlı (Vercel) adreslerine izin ver
-        policy.WithOrigins("http://localhost:3000", "https://*.vercel.app") 
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .SetIsOriginAllowedToAllowWildcardSubdomains(); // *.vercel.app için
-              
-        // VEYA DAHA BASİTİ (Ama daha az güvenli):
-        // policy.AllowAnyOrigin()
-        //       .AllowAnyHeader()
-        //       .AllowAnyMethod();
+        // Geliştirme: Vite dev server (http://localhost:5173) eklendi
+        // Üretim: Vercel'deki frontend domain'ini de buraya ekleyebilirsin
+        policy.WithOrigins(
+                "http://localhost:3000",   // eğer daha önce kullandıysan
+                "http://localhost:5173",   // Vite dev server — EKLE
+                "https://casestudy-frontend-yourname.vercel.app", // (OPSİYONEL) prod frontend domain
+                "https://*.vercel.app"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .SetIsOriginAllowedToAllowWildcardSubdomains();
+        
+        // Alternatif (yalnızca geliştirme için hızlı çözüm, prod'ta KULLANMA):
+        // policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
     });
 });
+
 
 var app = builder.Build();
 
