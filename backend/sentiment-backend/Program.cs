@@ -74,7 +74,7 @@ async Task<(bool ok, string? label, double? score, string? raw)> CallAiServiceAs
     }
 
     var client = httpFactory.CreateClient("ai");
-    var payload = new { data = new[] { text } }; // Gradio API expects {"data": ["text"]}
+    var payload = new { inputs = text }; // HF Inference API formatı
     var attempts = 3;
     var delayMs = 2000;
 
