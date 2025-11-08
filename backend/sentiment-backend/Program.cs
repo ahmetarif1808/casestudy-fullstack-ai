@@ -75,11 +75,7 @@ async Task<(bool ok, string? label, double? score, string? raw)> CallAiServiceAs
     var client = httpFactory.CreateClient("ai");
     
     // ✅ GRADIO API FORMAT: data array + fn_index
-    var payload = new 
-    { 
-        data = new[] { text },
-        fn_index = 0  // İlk (ve tek) fonksiyon
-    };
+ var payload = new { inputs = text };
     
     var attempts = 3;
     var delayMs = 2000;
@@ -91,7 +87,7 @@ async Task<(bool ok, string? label, double? score, string? raw)> CallAiServiceAs
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 
             // ✅ GRADIO API ENDPOINT
-            var request = new HttpRequestMessage(HttpMethod.Post, $"{aiUrl}/api/predict");
+            var request = new HttpRequestMessage(HttpMethod.Post, aiUrl);
             request.Content = JsonContent.Create(payload);
             
             // Token opsiyonel (public Space için gerekli değil)
@@ -118,16 +114,12 @@ async Task<(bool ok, string? label, double? score, string? raw)> CallAiServiceAs
                     var json = JsonNode.Parse(body);
                     
                     // ✅ GRADIO RESPONSE: { "data": [label, score], "duration": ... }
-                    if (json is JsonObject obj && obj["data"] is JsonArray dataArray)
+                    if (json is JsonObject obj)
                     {
-                        if (dataArray.Count >= 2)
-                        {
-                            var label = dataArray[0]?.ToString();
-                            var score = dataArray[1]?.GetValue<double>() ?? 0.0;
-                            return (true, label, score, body);
-                        }
+                         var label = obj["label"]?.ToString();
+                         var score = obj["score"]?.GetValue<double>() ?? 0.0;
+                        return (true, label, score, body);
                     }
-
                     app.Logger.LogWarning("Unexpected AI response format: {body}", body);
                     return (false, null, null, body);
                 }
