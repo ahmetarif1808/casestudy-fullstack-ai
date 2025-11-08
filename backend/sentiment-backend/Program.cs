@@ -64,7 +64,6 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 }
 
-// === HELPER: AI SERVICE CALL ===
 async Task<(bool ok, string? label, double? score, string? raw)> CallAiServiceAsync(IHttpClientFactory httpFactory, string text)
 {
     if (useMockFallback)
@@ -74,7 +73,10 @@ async Task<(bool ok, string? label, double? score, string? raw)> CallAiServiceAs
     }
 
     var client = httpFactory.CreateClient("ai");
-    var payload = new { inputs = text }; // HF Inference API formatı
+    
+    // ✅ GRADIO FORMAT: data array kullan
+    var payload = new { data = new[] { text } };
+    
     var attempts = 3;
     var delayMs = 2000;
 
@@ -84,9 +86,10 @@ async Task<(bool ok, string? label, double? score, string? raw)> CallAiServiceAs
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 
-            // Authorization header ekle
-            var request = new HttpRequestMessage(HttpMethod.Post, aiUrl);
+            // ✅ GRADIO ENDPOINT: /api/predict ekle
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{aiUrl}/api/predict");
             request.Content = JsonContent.Create(payload);
+            
             if (!string.IsNullOrWhiteSpace(hfToken))
             {
                 request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", hfToken);
@@ -108,27 +111,17 @@ async Task<(bool ok, string? label, double? score, string? raw)> CallAiServiceAs
                 try
                 {
                     var json = JsonNode.Parse(body);
-
-// JSON iki katmanlı mı kontrol et ([[...]])
-if (json is JsonArray outerArr && outerArr.Count > 0)
-{
-    var inner = outerArr[0];
-    if (inner is JsonArray innerArr && innerArr.Count > 0)
-    {
-        // genelde ilk eleman en yüksek skorlu olur
-        var firstObj = innerArr[0] as JsonObject;
-        var label = firstObj?["label"]?.ToString();
-        var score = firstObj?["score"]?.GetValue<double>() ?? 0.0;
-        return (true, label, score, body);
-    }
-    else if (inner is JsonObject singleObj)
-    {
-        // tek katmanlı JSON (eski format)
-        var label = singleObj["label"]?.ToString();
-        var score = singleObj["score"]?.GetValue<double>() ?? 0.0;
-        return (true, label, score, body);
-    }
-}
+                    
+                    // ✅ GRADIO RESPONSE FORMAT: { "data": [label, score] }
+                    if (json is JsonObject obj && obj["data"] is JsonArray dataArray)
+                    {
+                        if (dataArray.Count >= 2)
+                        {
+                            var label = dataArray[0]?.ToString();
+                            var score = dataArray[1]?.GetValue<double>() ?? 0.0;
+                            return (true, label, score, body);
+                        }
+                    }
 
                     return (false, null, null, body);
                 }
